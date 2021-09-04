@@ -35,13 +35,15 @@ export const getWeatherApi = (data, cbk) => dispatch => {
       if (response.ok) {
         console.log(response);
         dispatch(setWeather(response.data));
+        cbk(true);
       } else {
-        ToastAndroid.show('Something went wrong !', ToastAndroid.SHORT);
+        ToastAndroid.show('Something went wrong !!', ToastAndroid.SHORT);
+        cbk(false);
       }
       dispatch(setLoader(false));
-      cbk();
     })
     .catch(err => {
+      cbk(false);
       ToastAndroid.show('Server Error :(', ToastAndroid.SHORT);
       dispatch(setLoader(false));
     });

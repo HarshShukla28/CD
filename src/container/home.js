@@ -14,6 +14,7 @@ import {
   Easing,
   Dimensions,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {Loader} from '../components/loader';
@@ -25,10 +26,18 @@ import {colors, images, styles} from '../utils';
 export const HomeScreen = () => {
   const {location, weather, loading} = useSelector(state => state);
   const [detail, setDetail] = useState(-1);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(Math.random());
+  const [refresh, setRefresh] = useState(false);
+
   const height = useRef(new Animated.Value(0)).current;
   const conHeight = useRef(new Animated.Value(0)).current;
   const dispatch = useDispatch();
   useEffect(() => {
+    getData();
+  }, [retry]);
+
+  function getData() {
     if (location && location.coords) {
       getWeather(location.coords);
     } else {
@@ -59,23 +68,31 @@ export const HomeScreen = () => {
         {enableHighAccuracy: false, timeout: 10000, maximumAge: 10000},
       );
     }
-  }, []);
+  }
 
   function getWeather(obj) {
     dispatch(
-      getWeatherApi({lat: obj.latitude, lng: obj.longitude}, () => {
-        Animated.timing(conHeight, {
-          toValue: 1,
-          duration: 5000,
-          easing: Easing.linear,
-          useNativeDriver: false,
-        }).start(({finished}) => {
-          if (finished) {
-          }
-        });
+      getWeatherApi({lat: obj.latitude, lng: obj.longitude}, success => {
+        if (success) {
+          Animated.timing(conHeight, {
+            toValue: 1,
+            duration: 3000,
+            easing: Easing.linear,
+            useNativeDriver: false,
+          }).start();
+          setError(false);
+        } else {
+          setError(true);
+        }
+        setRefresh(false);
       }),
     );
   }
+
+  const onRefresh = () => {
+    setRefresh(true);
+    getData();
+  };
 
   useEffect(() => {
     if (detail != -1) {
@@ -122,193 +139,224 @@ export const HomeScreen = () => {
     }
   }
 
-  console.log(conHeight, 'conHeight');
-
-  return (
-    <SafeAreaView style={styles.box}>
-      <Loader loading={loading} />
-      <Animated.ScrollView
+  if (error) {
+    return (
+      <View
         style={{
-          maxHeight: conHeight.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, Dimensions.get('screen').height],
-          }),
-          opacity: conHeight.interpolate({
-            inputRange: [0, 0.5, 1],
-            outputRange: [0, 0.1, 1],
-          }),
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: colors.secondary,
         }}>
-        <View style={local.main}>
-          <View style={local.listView}>
-            <Text style={local.title}>Current Weather</Text>
-            <Text style={local.title}>{moment().format(' MMM, DD')}</Text>
-          </View>
-
-          {weather && weather.current && (
-            <View style={{flex: 1}}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  marginVertical: 20,
-                  flex: 1,
-                }}>
-                <Image
-                  style={{height: 60, width: 60, resizeMode: 'cover'}}
-                  source={getImage(weather.current.weather[0].main)}
-                />
-                <Text style={local.description}>
-                  {weather.current.weather[0].description}
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  marginBottom: 20,
-                }}>
-                <View style={local.row}>
-                  <Text style={[local.description, {width: '50%'}]}>
-                    Temperature
-                  </Text>
-                  <Text style={[local.description, {textTransform: 'none'}]}>
-                    {weather.current.temp}° C
-                  </Text>
-                  <Image style={local.icons} source={images.temp} />
-                </View>
-
-                <View style={local.row}>
-                  <Text style={[local.description, {width: '50%'}]}>
-                    Wind Speed
-                  </Text>
-                  <Text style={[local.description, {textTransform: 'none'}]}>
-                    {weather.current.wind_speed} m/s
-                  </Text>
-                  <Image style={local.icons} source={images.wind} />
-                </View>
-
-                <View style={local.row}>
-                  <Text style={[local.description, {width: '50%'}]}>
-                    Humidity
-                  </Text>
-                  <Text style={[local.description, {textTransform: 'none'}]}>
-                    {weather.current.humidity}%
-                  </Text>
-                  <Image style={local.icons} source={images.humid} />
-                </View>
-
-                <View style={local.row}>
-                  <Text style={[local.description, {width: '50%'}]}>
-                    Feels like
-                  </Text>
-                  <Text style={[local.description, {textTransform: 'none'}]}>
-                    {weather.current.feels_like}° C
-                  </Text>
-                  <Image style={local.icons} source={images.weather} />
-                </View>
-              </View>
+        <Loader loading={loading} />
+        <Text style={local.title}>Something went wrong at our end!</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setRetry(Math.random());
+          }}
+          style={{
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            borderRadius: 10,
+            backgroundColor: '#888',
+          }}>
+          <Text style={local.description}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  } else {
+    return (
+      <SafeAreaView style={styles.box}>
+        <Loader loading={loading} />
+        <Animated.ScrollView
+          style={{
+            maxHeight: conHeight.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, Dimensions.get('screen').height],
+            }),
+            opacity: conHeight.interpolate({
+              inputRange: [0, 0.5, 1],
+              outputRange: [0, 0.1, 1],
+            }),
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refresh}
+              onRefresh={() => onRefresh()}
+            />
+          }>
+          <View style={local.main}>
+            <View style={local.listView}>
+              <Text style={local.title}>Current Weather</Text>
+              <Text style={local.title}>{moment().format(' MMM, DD')}</Text>
             </View>
-          )}
-        </View>
-        <View style={local.main}>
-          <FlatList
-            data={weather && weather.daily}
-            keyExtractor={(item, index) => index + 'Forecast'}
-            renderItem={({item, index}) => {
-              if (index && index <= 5) {
-                return (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showDetail(index);
-                      }}>
-                      <View style={local.listView}>
-                        <View style={local.row}>
-                          <Image
-                            style={local.icons}
-                            source={getImage(item.weather[0].main)}
-                          />
-                          <Text style={local.description}>
-                            {item.weather[0].description}
+
+            {weather && weather.current && (
+              <View style={{flex: 1}}>
+                <View
+                  style={{
+                    alignItems: 'center',
+                    marginVertical: 20,
+                    flex: 1,
+                  }}>
+                  <Image
+                    style={{height: 60, width: 60, resizeMode: 'cover'}}
+                    source={getImage(weather.current.weather[0].main)}
+                  />
+                  <Text style={local.description}>
+                    {weather.current.weather[0].description}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    marginBottom: 20,
+                  }}>
+                  <View style={local.row}>
+                    <Text style={[local.description, {width: '50%'}]}>
+                      Temperature
+                    </Text>
+                    <Text style={[local.description, {textTransform: 'none'}]}>
+                      {weather.current.temp}° C
+                    </Text>
+                    <Image style={local.icons} source={images.temp} />
+                  </View>
+
+                  <View style={local.row}>
+                    <Text style={[local.description, {width: '50%'}]}>
+                      Wind Speed
+                    </Text>
+                    <Text style={[local.description, {textTransform: 'none'}]}>
+                      {weather.current.wind_speed} m/s
+                    </Text>
+                    <Image style={local.icons} source={images.wind} />
+                  </View>
+
+                  <View style={local.row}>
+                    <Text style={[local.description, {width: '50%'}]}>
+                      Humidity
+                    </Text>
+                    <Text style={[local.description, {textTransform: 'none'}]}>
+                      {weather.current.humidity}%
+                    </Text>
+                    <Image style={local.icons} source={images.humid} />
+                  </View>
+
+                  <View style={local.row}>
+                    <Text style={[local.description, {width: '50%'}]}>
+                      Feels like
+                    </Text>
+                    <Text style={[local.description, {textTransform: 'none'}]}>
+                      {weather.current.feels_like}° C
+                    </Text>
+                    <Image style={local.icons} source={images.weather} />
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+          <View style={local.main}>
+            <FlatList
+              data={weather && weather.daily}
+              keyExtractor={(item, index) => index + 'Forecast'}
+              renderItem={({item, index}) => {
+                if (index && index <= 5) {
+                  return (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          showDetail(index);
+                        }}>
+                        <View style={local.listView}>
+                          <View style={local.row}>
+                            <Image
+                              style={local.icons}
+                              source={getImage(item.weather[0].main)}
+                            />
+                            <Text style={local.description}>
+                              {item.weather[0].description}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[local.description, {fontStyle: 'italic'}]}>
+                            {moment(item.dt * 1000).format(' MMM, DD')}
                           </Text>
                         </View>
-                        <Text
-                          style={[local.description, {fontStyle: 'italic'}]}>
-                          {moment(item.dt * 1000).format(' MMM, DD')}
-                        </Text>
-                      </View>
 
-                      {index == detail && (
-                        <Animated.View
-                          style={{
-                            maxHeight: height.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0, 60],
-                            }),
-                            opacity: height.interpolate({
-                              inputRange: [0, 0.5, 1],
-                              outputRange: [0, 0.1, 1],
-                            }),
-                          }}>
-                          <View
+                        {index == detail && (
+                          <Animated.View
                             style={{
-                              flexDirection: 'row',
-                              flexWrap: 'wrap',
-                              justifyContent: 'space-between',
+                              maxHeight: height.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, 60],
+                              }),
+                              opacity: height.interpolate({
+                                inputRange: [0, 0.5, 1],
+                                outputRange: [0, 0.1, 1],
+                              }),
                             }}>
-                            <View style={local.row}>
-                              <Image
-                                style={local.smallIcons}
-                                source={images.temp}
-                              />
-                              <Text
-                                style={[
-                                  local.description,
-                                  {textTransform: 'none'},
-                                ]}>
-                                {item.temp.min}° C - {item.temp.max}° C
-                              </Text>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                flexWrap: 'wrap',
+                                justifyContent: 'space-between',
+                              }}>
+                              <View style={local.row}>
+                                <Image
+                                  style={local.smallIcons}
+                                  source={images.temp}
+                                />
+                                <Text
+                                  style={[
+                                    local.description,
+                                    {textTransform: 'none'},
+                                  ]}>
+                                  {item.temp.min}° C - {item.temp.max}° C
+                                </Text>
+                              </View>
+                              <View style={[local.row, {marginHorizontal: 10}]}>
+                                <Image
+                                  style={local.smallIcons}
+                                  source={images.wind}
+                                />
+                                <Text
+                                  style={[
+                                    local.description,
+                                    {textTransform: 'none'},
+                                  ]}>
+                                  {item.wind_speed} m/s
+                                </Text>
+                              </View>
+                              <View style={local.row}>
+                                <Image
+                                  style={local.smallIcons}
+                                  source={images.humid}
+                                />
+                                <Text
+                                  style={[
+                                    local.description,
+                                    {textTransform: 'none'},
+                                  ]}>
+                                  {item.humidity}%
+                                </Text>
+                              </View>
                             </View>
-                            <View style={[local.row, {marginHorizontal: 10}]}>
-                              <Image
-                                style={local.smallIcons}
-                                source={images.wind}
-                              />
-                              <Text
-                                style={[
-                                  local.description,
-                                  {textTransform: 'none'},
-                                ]}>
-                                {item.wind_speed} m/s
-                              </Text>
-                            </View>
-                            <View style={local.row}>
-                              <Image
-                                style={local.smallIcons}
-                                source={images.humid}
-                              />
-                              <Text
-                                style={[
-                                  local.description,
-                                  {textTransform: 'none'},
-                                ]}>
-                                {item.humidity}%
-                              </Text>
-                            </View>
-                          </View>
-                        </Animated.View>
-                      )}
-                    </TouchableOpacity>
-                    {index < 5 && <View style={local.seprator} />}
-                  </>
-                );
-              } else {
-                return null;
-              }
-            }}
-          />
-        </View>
-      </Animated.ScrollView>
-    </SafeAreaView>
-  );
+                          </Animated.View>
+                        )}
+                      </TouchableOpacity>
+                      {index < 5 && <View style={local.seprator} />}
+                    </>
+                  );
+                } else {
+                  return null;
+                }
+              }}
+            />
+          </View>
+        </Animated.ScrollView>
+      </SafeAreaView>
+    );
+  }
 };
 
 const local = StyleSheet.create({
