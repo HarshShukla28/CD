@@ -2,8 +2,8 @@ import * as actionTypes from '../actions/app';
 
 const initialState = {
   loading: false,
-  location: '',
-  weather: '',
+  location: {},
+  weather: {},
 };
 
 export default (state = initialState, action) => {

@@ -29,7 +29,7 @@ export const getWeatherApi = data => dispatch => {
   dispatch(setLoader(true));
   api
     .get(
-      `https://api.openweathermap.org/data/2.5/onecall?lat=${data.lat}&lon=${data.lng}&exclude=minutely&appid=${WEATHER_API}`,
+      `https://api.openweathermap.org/data/2.5/onecall?lat=${data.lat}&lon=${data.lng}&exclude=minutely,hourly&units=metric&appid=${WEATHER_API}`,
     )
     .then(response => {
       if (response.ok) {
