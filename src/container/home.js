@@ -170,7 +170,7 @@ export const HomeScreen = () => {
         <Loader loading={loading} />
         <Animated.ScrollView
           style={{
-            maxHeight: conHeight.interpolate({
+            minHeight: conHeight.interpolate({
               inputRange: [0, 1],
               outputRange: [0, Dimensions.get('screen').height],
             }),
