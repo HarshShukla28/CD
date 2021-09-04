@@ -7,6 +7,7 @@ Potrait: https://snipboard.io/vcbNSA.jpg
 LandScape: https://snipboard.io/DtQqyv.jpg (Scrollable)
 Home Screen Animation: https://snipboard.io/qc9WPM.jpg
 List Item Animation: https://snipboard.io/hxdZb5.jpg
+Error_Occured: https://snipboard.io/TeF61Y.jpg
 
 API_Keys are kept inside env files.
 
