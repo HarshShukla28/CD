@@ -8,7 +8,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    fontSize: 28,
+    fontSize: 40,
+    color: colors.primary,
     fontWeight: 'bold',
     fontStyle: 'italic',
   },
@@ -16,7 +17,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0 ,0 ,0, 0.4)',
+    backgroundColor: 'rgba(0 ,0 ,0, 0.2)',
   },
   box: {
     flex: 1,
