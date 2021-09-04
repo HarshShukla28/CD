@@ -25,7 +25,7 @@ const api = create({
   baseURL: 'https://api.github.com',
 });
 
-export const getWeatherApi = data => dispatch => {
+export const getWeatherApi = (data, cbk) => dispatch => {
   dispatch(setLoader(true));
   api
     .get(
@@ -39,6 +39,7 @@ export const getWeatherApi = data => dispatch => {
         ToastAndroid.show('Something went wrong !', ToastAndroid.SHORT);
       }
       dispatch(setLoader(false));
+      cbk();
     })
     .catch(err => {
       ToastAndroid.show('Server Error :(', ToastAndroid.SHORT);
